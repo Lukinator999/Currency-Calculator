@@ -2,6 +2,7 @@
 using System.Data.SQLite;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
@@ -24,23 +25,37 @@ namespace currency_calculator
         {
             try
             {
-                string url = "https://v6.exchangerate-api.com/v6/16d3ff4d3fd595b1138b7383/latest/USD";
+                string url = "g";
+                try
+                {
+                    using (var fileStream = File.OpenRead("api.txt"))
+                    using (var streamReader = new StreamReader(fileStream, Encoding.UTF8))
+                    {
+                        url = streamReader.ReadLine();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Fehler beim Lesen der Datei: {ex.Message}");
+                }
+                if (url != null)
+                {
+                    var client = new HttpClient();
+                    var uri = new Uri(url);
+                    var result = client.GetAsync(uri).Result.Content.ReadAsStringAsync().Result;
+                    // Parse JSON string
+                    var jsonObject = JObject.Parse(result);
+                    var conversionRates = jsonObject["conversion_rates"];
 
-                var client = new HttpClient();
-                var uri = new Uri(url);
-                var result = client.GetAsync(uri).Result.Content.ReadAsStringAsync().Result;
-                // Parse JSON string
-                var jsonObject = JObject.Parse(result);
-                var conversionRates = jsonObject["conversion_rates"];
+                    string jsonString = JsonConvert.SerializeObject(conversionRates);
 
-                string jsonString = JsonConvert.SerializeObject(conversionRates);
-
-                var values = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(jsonString);
-                ExchangeRateStorage.UpdateRates(values);
+                    var values = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(jsonString);
+                    ExchangeRateStorage.UpdateRates(values);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Fehler beim Abrufen der Wechselkurse", "Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Fehler beim Abrufen der Wechselkurse"+ex, "Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
         private void txtFromCurrency_TextChanged(object sender, EventArgs e)
