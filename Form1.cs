@@ -25,10 +25,12 @@ namespace currency_calculator
         {
             try
             {
-                string url = "g";
+                string url;
                 try
                 {
-                    using (var fileStream = File.OpenRead("api.txt"))
+                    string projectPath = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
+                    string filePath = Path.Combine(projectPath, "api.txt");
+                    using (var fileStream = File.OpenRead(filePath))
                     using (var streamReader = new StreamReader(fileStream, Encoding.UTF8))
                     {
                         url = streamReader.ReadLine();
@@ -37,6 +39,7 @@ namespace currency_calculator
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Fehler beim Lesen der Datei: {ex.Message}");
+                    url = "";
                 }
                 if (url != null)
                 {
